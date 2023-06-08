@@ -173,7 +173,7 @@
     document.getElementById("address").onchange = geoCode;
     document.getElementById("geo").onclick = navigate;
     // 根据起终点名称规划驾车导航路线
-    function navigationOnRestoreData(lng,lat){
+    function onRestoreData(lng,lat){
         longitude = 117.30712;
         latitude = 38.999029;
         document.getElementById('start').value = longitude+','+latitude;
@@ -182,7 +182,7 @@
         navigate();
         return endlnglat;
     }
-    function navigationOnSavaData(){
+    function onSavaData(){
         return endlnglat;
     }
 </script>
