@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>导航</title>
+    <style type="text/css">
+        html,
+        body,
+        #container {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+    <style type="text/css">
+        #panel {
+            position: fixed;
+            background-color: white;
+            max-height: 90%;
+            overflow-y: auto;
+            top: 10px;
+            right: 10px;
+            width: 180px;
+        }
+        #panel .amap-call {
+            background-color: #009cf9;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+        #panel .amap-lib-driving {
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            overflow: hidden;
+        }
+    </style>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            securityJsCode:'c1aad4c4ac77efd5aab20bfedc54b5ad',
+        }
+    </script>
+    <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=336284f8a03022dd6b138a1d09014f2a&plugin=AMap.Driving,AMap.Geocoder"></script>
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+
+    <!--    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js&plugin=AMap.ToolBar,AMap.Driving"></script>-->
+</head>
+<body>
+
+<div id="container"></div>
+<div id="panel"></div>
+<div class="input-card" style='width:28rem;'>
+    <!--    <label style='color:grey'>地理编码，根据地址获取经纬度坐标</label>-->
+    <div class="input-item">
+        <div class="input-item-prepend"><span class="input-item-text">起始经纬度</span></div>
+        <input id='start' disabled type="text">
+    </div>
+    <div class="input-item">
+        <div class="input-item-prepend"><span class="input-item-text" >终点</span></div>
+        <input id='address' type="text">
+    </div>
+    <div class="input-item">
+        <div class="input-item-prepend"><span class="input-item-text">经纬度</span></div>
+        <input id='lnglat' disabled type="text">
+    </div>
+    <input id="geo" type="button" class="btn" value="开始导航" />
+</div>
+<script type="text/javascript" src="https://webapi.amap.com/loader.js"></script>
+<script type="text/javascript">
+    var longitude = '116.379028';
+    var latitude = '39.865042';
+
+    //基本地图加载
+    var map = new AMap.Map("container", {
+        resizeEnable: true,
+        center: [116.397428, 39.90923],//地图中心点
+        zoom: 13 //地图显示的缩放级别
+    });
+    var marker    =   new AMap.Marker({
+        map: map
+    });
+    //构造路线导航类
+    var driving = new AMap.Driving({
+        map: map,
+        panel: "panel"
+    });
+    function getLocation() {
+        var options = {
+            enableHighAccuracy: true,
+            maximumAge: 1000
+        };
+        if (navigator.geolocation) {
+            // 走到这里说明，浏览器支持geolocation，参数里有两个回调函数，一个是定位成功后的处理操作，一个是定位失败后的处理操作，另外一个参数没有研究过
+            navigator.geolocation.getCurrentPosition(onSuccess, onError, options);
+        } else {
+            // 否则浏览器不支持geolocation
+            alert('您的浏览器不支持地理位置定位！');
+        }
+    }
+
+    // 成功时的回调函数
+    // 第一步获取定位成功返回的经纬度数据，然后结合百度那边提供的接口进行具体位置的转换，最后还有一个数据提交的方法，要跟自己的业务操作了
+    function onSuccess(position) {
+
+        // 经度
+        longitude = position.coords.longitude;
+        // 纬度
+        latitude = position.coords.latitude;
+        document.getElementById('start').value = longitude+','+latitude;
+        //marker.setPosition([longitude,latitude]);
+        //marker.setZoom(13);
+        //map.add(marker);
+
+        //alert('您的当前地址的经纬度：经度' + longitude + '，纬度' + latitude);
+    }
+    // 失败时的回调函数
+    // 这里是错误提示信息
+    function onError(error) {
+        switch (error.code) {
+            case 1:
+                alert("位置服务被拒绝！");
+                break;
+            case 2:
+                alert("暂时获取不到位置信息！");
+                break;
+            case 3:
+                alert("获取信息超时！");
+                break;
+            case 4:
+                alert("未知错误！");
+                break;
+        }
+    }
+    getLocation();
+
+    var end = document.getElementById("address").value;
+    var endlnglat = [1,1];
+    var geocoder = new AMap.Geocoder({
+        // city: "010", //城市设为北京，默认：“全国”
+    });
+
+    function geoCode() {
+        var getEndAdress = new Promise((resolve, reject) => {
+            var address  = document.getElementById("address").value;
+            geocoder.getLocation(address, function(status, result) {
+                if (status === 'complete'&&result.geocodes.length) {
+                    var lnglat = result.geocodes[0].location;
+                    end = lnglat;
+                    document.getElementById('lnglat').value = lnglat;
+                    endlnglat[0]=end.lng;
+                    endlnglat[1]=end.lat;
+                    //marker.setPosition(endlnglat);
+                    //map.add(marker);
+                    //map.setFitView(marker);
+                }else{
+                    log.error('根据地址查询位置失败');
+                }
+            });
+        });
+
+    }
+    function navigate(){
+        driving.search(new AMap.LngLat(longitude, latitude), new AMap.LngLat(endlnglat[0], endlnglat[1]), function (status, result) {
+            // result 即是对应的驾车导航信息，相关数据结构文档请参考  https://lbs.amap.com/api/javascript-api/reference/route-search#m_DrivingResult
+            if (status === 'complete') {
+                log.success('绘制驾车路线完成');
+            } else {
+                log.error('获取驾车数据失败：' + result);
+            }
+        });
+    }
+    document.getElementById("address").onchange = geoCode;
+    document.getElementById("geo").onclick = navigate;
+    // 根据起终点名称规划驾车导航路线
+    function navigationOnRestoreData(lng,lat){
+        longitude = 117.30712;
+        latitude = 38.999029;
+        document.getElementById('start').value = longitude+','+latitude;
+        endlnglat[0] = parseFloat(lng);
+        endlnglat[1] = parseFloat(lat);
+        navigate();
+        return endlnglat;
+    }
+    function navigationOnSavaData(){
+        return endlnglat;
+    }
+</script>
+</body>
+
+</html>
